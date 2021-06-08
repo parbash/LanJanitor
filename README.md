@@ -1,5 +1,5 @@
 # LanJanitor
-When can't seem to keep your homelab servers up to date, let LanJanitor help!
+When you can't seem to keep your homelab servers up to date, let LanJanitor help!
 
 ## Overview
 The idea for LanJanitor is to automate the boring job like installing updates...
