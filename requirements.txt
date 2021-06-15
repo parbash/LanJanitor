@@ -1,0 +1,4 @@
+flask
+ansible
+ansible_runner
+pycryptodome
