@@ -29,31 +29,36 @@ The pieces that make LanJanitor work are:
 
 ## Installation
 ### Manual
-1. Build the docker container
+
+1. Pull repo files
+
+2. Build the docker container
 ```bash
 docker build -t lanjanitor:latest .
 ```
 
-2. Start the docker container. It will make the site available on port 80. You can set the port of your choice.
+3. Start the docker container. It will make the site available on port 80. You can set the port of your choice.
 ```bash
 docker run --name lanjanitor -d -p 80:5000 --mount type=bind,source="$(pwd)"/app,target=/app lanjanitor
 ```
 
-3. Browse to port 80
+4. Browse to port 80
 
 ### Start Script
 The benefit of this script is that it can be used to rebuild the image as well.
 
-1. Create a shell script with the following:
+1. Pull repo files
+
+2. Create a shell script with the following:
 ```bash
 docker stop lanjanitor
 docker rm  lanjanitor
 docker build -t lanjanitor:latest .
 docker run --name lanjanitor -d -p 80:5000 --mount type=bind,source="$(pwd)"/app,target=/app lanjanitor
 ```
-2. Run the script
+3. Run the script
 
-3. Browse to port 80
+4. Browse to port 80
 
 ## Uninstallation
 Ctrl-A + shift + delete
