@@ -16,15 +16,44 @@ The pieces that make LanJanitor work are:
 
 ## Features
 ### 0.1
-* CRUD servers from DB
-* Detect if reboot is required
+* CRUD servers from DB 
+
+### In development...
 * Detect how many updates are required
+
+### ToDo...
+* Detect if reboot is required
 * Reboot server
 * Install updates
 * Support for Ubuntu 20.04 servers
 
 ## Installation
-To be continued...
+### Manual
+1. Build the docker container
+```bash
+docker build -t lanjanitor:latest .
+```
+
+2. Start the docker container. It will make the site available on port 80. You can set the port of your choice.
+```bash
+docker run --name lanjanitor -d -p 80:5000 --mount type=bind,source="$(pwd)"/app,target=/app lanjanitor
+```
+
+3. Browse to port 80
+
+### Start Script
+The benefit of this script is that it can be used to rebuild the image as well.
+
+1. Create a shell script with the following:
+```bash
+docker stop lanjanitor
+docker rm  lanjanitor
+docker build -t lanjanitor:latest .
+docker run --name lanjanitor -d -p 80:5000 --mount type=bind,source="$(pwd)"/app,target=/app lanjanitor
+```
+2. Run the script
+
+3. Browse to port 80
 
 ## Uninstallation
 Ctrl-A + shift + delete
