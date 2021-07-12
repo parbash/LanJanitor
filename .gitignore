@@ -3,5 +3,7 @@ start.sh
 app/private.pem
 app/public.pem
 app/lanjanitor.db
-app/ansible
+app/ansible/artifacts
+app/ansible/env
+app/ansible/inventory
 app/__pycache__

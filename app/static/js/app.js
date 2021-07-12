@@ -1,4 +1,4 @@
-// Define the `phonecatApp` module
+// Define the `lanJanitorApp` module
 var app = angular.module('lanJanitor', []);
 
 app.config(['$interpolateProvider', function($interpolateProvider) {
@@ -6,7 +6,7 @@ app.config(['$interpolateProvider', function($interpolateProvider) {
     $interpolateProvider.endSymbol('a}');
 }]);
 
-// Define the `PhoneListController` controller on the `phonecatApp` module
+// Define the `lanJanitorController` controller on the `lanJanitorApp` module
 app.controller('lanJanitorController', function ($scope, $http) {
 
     $scope.getServers = function(){
@@ -30,6 +30,17 @@ app.controller('lanJanitorController', function ($scope, $http) {
             $http.delete("api/servers",{params: {id: _id}})
             .then(function(response){
                 $scope.getServers();
+            });
+        }
+    }
+
+    $scope.upgradeServer = function(_ip,_name){
+        if (confirm("Install updates on " + _name + "?")){
+            document.getElementById('overlay').style.display = 'block';
+            $http.get("api/updates",{params: {ip: _ip}})
+            .then(function(response){
+                $scope.getServers();
+                document.getElementById('overlay').style.display = 'none';
             });
         }
     }
