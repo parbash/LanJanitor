@@ -44,6 +44,19 @@ docker run --name lanjanitor -d -p 80:5000 --mount type=bind,source="$(pwd)"/app
 
 4. Browse to port 80
 
+### Docker Compose File
+
+1. Pull repo files
+
+2. Edit the docker-compose.yml file and set the path to your volume.
+
+3. Build and start the docker container
+```bash
+docker-compose up -d
+```
+
+4. Browse to port 80
+
 ### Start Script
 The benefit of this script is that it can be used to rebuild the image as well.
 
