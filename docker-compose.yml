@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  lanjanitor:
+    image: lanjanitor:latest
+    container_name: lanjanitor
+    build: .
+    volumes:
+      - /YOUR_PATH_HERE/LanJanitor/app:/app
+    ports:
+      - 80:5000
+    restart: unless-stopped
