@@ -1,26 +1,67 @@
 # Lanjanitor - A simple Ansible based server management tool
-from flask import Flask, render_template, jsonify, request, make_response, session
-from Crypto.PublicKey import RSA
-from io import StringIO
-import ansible_runner
-import sqlite3
-import sys
 import os
-import click # command line parameters
+import sys
+import sqlite3
+from io import StringIO
+from flask import Flask, render_template, jsonify, request, make_response, session
 from werkzeug.security import generate_password_hash, check_password_hash
+from Crypto.PublicKey import RSA
+import ansible_runner
+import click # command line parameters
+import subprocess
+import platform
+import time
+from flask_wtf import CSRFProtect
+from datetime import timedelta, datetime
+from app.api import api
 
+# --- Constants ---
+DB_PATH = '/app/lanjanitor.db'
+PRIVATE_KEY_PATH = '/app/private.pem'
+PUBLIC_KEY_PATH = '/app/public.pem'
+SERVERS_TABLE = 'servers'
+USERS_TABLE = 'users'
+DEFAULT_SERVER_IP = '192.168.0.100'
+DEFAULT_SERVER_NAME = 'server1'
+PING_CACHE_TTL = 30  # seconds
+SESSION_TIMEOUT_SECONDS = 1800  # 30 minutes
+API_SERVERS = "api/servers"
+
+# --- Flask App Setup ---
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'dev_secret_key')
+# WARNING: For production, set SECRET_KEY to a strong, random value via environment variable!
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(32))
+
+# CSRF protection for all POST/PUT/DELETE requests
+csrf = CSRFProtect(app)
+
+# Register blueprints
+app.register_blueprint(api)
+
+# --- Session Timeout Setup ---
+@app.before_request
+def session_timeout_check():
+    """Expire session after timeout."""
+    if 'user' in session:
+        now = datetime.utcnow()
+        last_active = session.get('last_active')
+        if last_active:
+            last_active = datetime.fromisoformat(last_active)
+            if (now - last_active).total_seconds() > SESSION_TIMEOUT_SECONDS:
+                session.clear()
+                return make_response('Session expired', 401)
+        session['last_active'] = now.isoformat()
 
 # --- USER AUTH SETUP ---
 def init_user_db():
-    with sqlite3.connect('/app/lanjanitor.db') as conn:
+    """Initialize user database and default admin user."""
+    with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
-        c.execute('''CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password_hash TEXT)''')
+        c.execute(f'''CREATE TABLE IF NOT EXISTS {USERS_TABLE} (username TEXT PRIMARY KEY, password_hash TEXT)''')
         # Insert default admin if not exists
-        c.execute("SELECT * FROM users WHERE username='admin'")
+        c.execute(f"SELECT * FROM {USERS_TABLE} WHERE username='admin'")
         if not c.fetchone():
-            c.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", ('admin', generate_password_hash('admin')))
+            c.execute(f"INSERT INTO {USERS_TABLE} (username, password_hash) VALUES (?, ?)", ('admin', generate_password_hash('admin')))
         conn.commit()
 
 @app.before_first_request
@@ -35,78 +76,6 @@ def login_required(f):
             return make_response('Unauthorized', 401)
         return f(*args, **kwargs)
     return decorated_function
-
-# --- AUTH API ENDPOINTS ---
-@app.route('/api/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    with sqlite3.connect('/app/lanjanitor.db') as conn:
-        c = conn.cursor()
-        c.execute('SELECT password_hash FROM users WHERE username=?', (username,))
-        row = c.fetchone()
-        if row and check_password_hash(row[0], password):
-            session['user'] = username
-            return make_response('ok', 200)
-    return make_response('Invalid credentials', 401)
-
-@app.route('/api/logout', methods=['POST'])
-def logout():
-    session.pop('user', None)
-    return make_response('ok', 200)
-
-@app.route('/api/set_password', methods=['POST'])
-@login_required
-def set_password():
-    data = request.get_json()
-    old_password = data.get('old_password')
-    new_password = data.get('new_password')
-    username = session.get('user')
-    with sqlite3.connect('/app/lanjanitor.db') as conn:
-        c = conn.cursor()
-        c.execute('SELECT password_hash FROM users WHERE username=?', (username,))
-        row = c.fetchone()
-        if not row or not check_password_hash(row[0], old_password):
-            return make_response('Current password incorrect', 400)
-        c.execute('UPDATE users SET password_hash=? WHERE username=?', (generate_password_hash(new_password), username))
-        conn.commit()
-    return make_response('ok', 200)
-from flask import Flask, render_template, jsonify,request, make_response
-from Crypto.PublicKey import RSA
-from io import StringIO
-import ansible_runner
-import sqlite3
-import sys
-import os
-import click # command line parameters
-
-app = Flask(__name__)
-
-# Return DB queries with column names
-def dict_factory(cursor, row):
-    d = {}
-    for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
-
-def runPlaybook(_playbook, _ip):
-    # Change STDOUT to grab the playbook output
-    old_stdout = sys.stdout
-    result = StringIO()
-    sys.stdout = result
-
-    # Run the playbook
-    _inventory = f'"{_ip}"'
-    r = ansible_runner.run(private_data_dir='/app/ansible', playbook=_playbook, inventory=_inventory, extravars={ 'target' :_ip})
-    
-    # Reset STDOUT
-    sys.stdout = old_stdout
-
-    # Change playbook status for actual output
-    r.status = result.getvalue()
-    return r
-
 
 # HTML Routes
 @app.route('/login')
@@ -123,32 +92,63 @@ def render_home():
 def render_settings():
     return render_template("settings.html")
 
+# --- Ping Cache Setup ---
+_ping_cache = {}
+
+def ping_host(ip):
+    # Use system ping, 1 packet, short timeout
+    param = '-n' if platform.system().lower() == 'windows' else '-c'
+    timeout = '-w' if platform.system().lower() == 'windows' else '-W'
+    try:
+        result = subprocess.run([
+            'ping', param, '1', timeout, '1', ip
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return result.returncode == 0
+    except Exception as ex:
+        print(f'[Ping] Error pinging {ip}: {ex}')
+        return False
+
+def get_cached_ping(ip: str) -> bool:
+    """Return cached ping status or ping and cache result."""
+    now = time.time()
+    entry = _ping_cache.get(ip)
+    if entry and now - entry['timestamp'] < PING_CACHE_TTL:
+        return entry['status']
+    # Not cached or expired
+    status = ping_host(ip)
+    _ping_cache[ip] = {'status': status, 'timestamp': now}
+    return status
+
 # CLI Commands
 @app.cli.command()
 def setupdb():
-    with sqlite3.connect('/app/lanjanitor.db') as conn:
+    with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
-        c.execute('''CREATE TABLE servers (server_id integer primary key autoincrement, server_name text, server_ip text, server_updates integer, server_reboot text)''')
-        c.execute("INSERT INTO servers (server_name,server_ip, server_updates, server_reboot) VALUES ('server1','192.168.0.100',0,'false')")
+        c.execute(f'''CREATE TABLE IF NOT EXISTS {SERVERS_TABLE} (server_id integer primary key autoincrement, server_name text, server_ip text, server_updates integer, server_reboot text)''')
+        # Only insert default server if it does not already exist
+        c.execute(f"SELECT * FROM {SERVERS_TABLE} WHERE server_ip = ?", (DEFAULT_SERVER_IP,))
+        if not c.fetchone():
+            c.execute(f"INSERT INTO {SERVERS_TABLE} (server_name,server_ip, server_updates, server_reboot) VALUES (?,?,?,?)", (DEFAULT_SERVER_NAME,DEFAULT_SERVER_IP,0,'false'))
         conn.commit()
     return 'ok'
 
 @app.cli.command()
 def checkupdates():
     print("Starting check updates...")
-    with sqlite3.connect('/app/lanjanitor.db') as conn:
+    with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = dict_factory
         c = conn.cursor()
         servers = c.execute("SELECT * FROM servers").fetchall()
     for server in servers:
         aptUpdate(server['server_ip'])
                   
-def aptUpdate(_ip):
-    with sqlite3.connect('/app/lanjanitor.db') as conn:
+def aptUpdate(ip: str):
+    """Check for updates and reboot status, update DB."""
+    with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = dict_factory
         c = conn.cursor()
         try:
-            output = runPlaybook('update_check.yml', _ip)
+            output = runPlaybook('update_check.yml', ip)
             # Parse updates
             updates = output.status.split("{")[1].split('}')[0].split(':')[1].split(';')[0].replace(' ','').replace('"','')
             updates = int(updates)
@@ -172,85 +172,52 @@ def aptUpdate(_ip):
 
         try:
             print(f'Updates: {updates}, Reboot required: {reboot_required}')
-            c.execute(f'UPDATE servers SET server_updates = {updates}, server_reboot = "{reboot_required}" WHERE server_ip = "{_ip}"')
+            c.execute(f'UPDATE {SERVERS_TABLE} SET server_updates = ?, server_reboot = ? WHERE server_ip = ?', (updates, reboot_required, ip))
         except Exception as ex:
             print(f'[CheckUpdates] Error updating db...{ex}')
         conn.commit()
 
 @app.cli.command()
 def genkey():
-    if not os.path.isfile('/app/private.pem'):
+    if not os.path.isfile(PRIVATE_KEY_PATH):
         key = RSA.generate(2048)
-        f = open("/app/private.pem", "wb")
+        f = open(PRIVATE_KEY_PATH, "wb")
         f.write(key.exportKey('PEM'))
         f.close()
 
         pubkey = key.publickey()
-        f = open("/app/public.pem", "wb")
+        f = open(PUBLIC_KEY_PATH, "wb")
         f.write(pubkey.exportKey('OpenSSH'))
         f.close()
     else:
         print('key already exists')
 
-# HTML API Routes
-@app.route("/api/key",methods=["GET"])
-@login_required
-def getkey():
-    try:
-        with open('/app/public.pem', 'r') as file:
-            data = file.read().replace('\n', '<br />')
-    except:
-        data = "No key has been generated..."
-    return data 
+# Return DB queries with column names
+def dict_factory(cursor, row):
+    """Return DB queries with column names as dict."""
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
 
-@app.route("/api/updates", methods=["GET"])
-@login_required
-def aptUpgrade():
-    output = runPlaybook( 'update_install.yml', request.args.get("ip") )
-    app.logger.info(output.status)
-    aptUpdate(request.args.get("ip"))
-    return make_response("ok", 200)
+def runPlaybook(_playbook, _ip):
+    # Change STDOUT to grab the playbook output
+    old_stdout = sys.stdout
+    result = StringIO()
+    sys.stdout = result
 
-@app.route("/api/servers",methods=["GET","POST","DELETE"])
-@login_required
-def servers():
+    # Run the playbook
+    _inventory = f'"{_ip}"'
+    r = ansible_runner.run(private_data_dir='/app/ansible', playbook=_playbook, inventory=_inventory, extravars={ 'target' :_ip})
+    
+    # Reset STDOUT
+    sys.stdout = old_stdout
 
-    import subprocess
-    import platform
-    def ping_host(ip):
-        # Use system ping, 1 packet, short timeout
-        param = '-n' if platform.system().lower() == 'windows' else '-c'
-        timeout = '-w' if platform.system().lower() == 'windows' else '-W'
-        try:
-            result = subprocess.run([
-                'ping', param, '1', timeout, '1', ip
-            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            return result.returncode == 0
-        except Exception:
-            return False
+    # Change playbook status for actual output
+    r.status = result.getvalue()
+    return r
 
-    if request.method == 'GET':
-        with sqlite3.connect('/app/lanjanitor.db') as conn:
-            conn.row_factory = dict_factory
-            c = conn.cursor()
-            servers = c.execute("SELECT * FROM servers").fetchall()
-            # Add ping status to each server
-            for server in servers:
-                server['ping_status'] = 'online' if ping_host(server['server_ip']) else 'offline'
-        return jsonify(servers)
-    elif request.method == 'POST':
-        with sqlite3.connect('/app/lanjanitor.db') as conn:
-            c = conn.cursor()
-            c.execute(f"INSERT INTO servers (server_name,server_ip, server_updates, server_reboot) VALUES ('{request.json['name']}','{request.json['ip']}',0,'false')")
-            conn.commit()
-        return 'ok'
-    elif request.method == 'DELETE':
-        delitem = request.args.get('id')
-        with sqlite3.connect('/app/lanjanitor.db') as conn:
-            c = conn.cursor()
-            c.execute(f'DELETE FROM servers WHERE server_id = "{ delitem }"')
-            conn.commit()
-        return make_response( "ok", 200 )
+# Remove API routes now handled by blueprint
 
 # Add back the reboot_server route, now in the correct place and protected
 @app.route("/api/reboot", methods=["POST"])

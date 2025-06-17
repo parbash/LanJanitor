@@ -1,15 +1,3 @@
-    $scope.rebootServer = function(_ip, _name){
-        if (confirm("Reboot " + _name + "? This will restart the server.")) {
-            document.getElementById('overlay').style.display = 'block';
-            $http.post("api/reboot", {ip: _ip, name: _name})
-            .then(function(response){
-                setTimeout(function(){
-                    $scope.getServers();
-                    document.getElementById('overlay').style.display = 'none';
-                }, 10000); // Wait 10 seconds for reboot
-            });
-        }
-    }
 // Define the `lanJanitorApp` module
 var app = angular.module('lanJanitor', []);
 
@@ -18,52 +6,96 @@ app.config(['$interpolateProvider', function($interpolateProvider) {
     $interpolateProvider.endSymbol('a}');
 }]);
 
+// API endpoint constants
+const API_SERVERS = "api/servers";
+const API_REBOOT = "api/reboot";
+const API_UPDATES = "api/updates";
+const API_KEY = "api/key";
+
 // Define the `lanJanitorController` controller on the `lanJanitorApp` module
 app.controller('lanJanitorController', function ($scope, $http) {
+    // CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
-    $scope.getServers = function(){
-        $http.get("api/servers")
+    // Helper to add CSRF header
+    function csrfConfig(config) {
+        config = config || {};
+        config.headers = config.headers || {};
+        config.headers['X-CSRFToken'] = csrfToken;
+        return config;
+    }
+
+    // Overlay helpers
+    function showOverlay() {
+        document.getElementById('overlay').style.display = 'block';
+    }
+    function hideOverlay() {
+        document.getElementById('overlay').style.display = 'none';
+    }
+
+    // Get server list
+    $scope.getServers = function() {
+        $http.get(API_SERVERS)
         .then(function(response) {
             $scope.servers = response.data;
         });
-    }
+    };
 
-    $scope.addServer = function(_name,_ip){
-        $http.post("api/servers",{name:_name, ip:_ip})
+    // Add a server
+    $scope.addServer = function(name, ip) {
+        $http.post(API_SERVERS, {name: name, ip: ip}, csrfConfig())
         .then(function(response) {
-            $scope.newServerName="";
-            $scope.newServerIP="";
+            $scope.newServerName = "";
+            $scope.newServerIP = "";
             $scope.getServers();
         });
-    }
+    };
 
-    $scope.delServer = function(_id,_name){
-        if (confirm("Delete " + _name + "?")){
-            $http.delete("api/servers",{params: {id: _id}})
-            .then(function(response){
+    // Delete a server
+    $scope.delServer = function(id, name) {
+        if (confirm("Delete " + name + "?")) {
+            $http.delete(API_SERVERS, {params: {id: id}, ...csrfConfig()})
+            .then(function(response) {
                 $scope.getServers();
             });
         }
-    }
+    };
 
-    $scope.upgradeServer = function(_ip,_name){
-        if (confirm("Install updates on " + _name + "?")){
-            document.getElementById('overlay').style.display = 'block';
-            $http.get("api/updates",{params: {ip: _ip}})
-            .then(function(response){
-                $scope.getServers();
-                document.getElementById('overlay').style.display = 'none';
+    // Reboot a server
+    $scope.rebootServer = function(ip, name) {
+        if (confirm("Reboot " + name + "? This will restart the server.")) {
+            showOverlay();
+            $http.post(API_REBOOT, {ip: ip, name: name}, csrfConfig())
+            .then(function(response) {
+                setTimeout(function() {
+                    $scope.getServers();
+                    hideOverlay();
+                }, 10000); // Wait 10 seconds for reboot
             });
         }
-    }
+    };
 
-    $scope.getkey = function(){
-        $http.get("api/key")
+    // Upgrade a server
+    $scope.upgradeServer = function(ip, name) {
+        if (confirm("Install updates on " + name + "?")) {
+            showOverlay();
+            $http.get(API_UPDATES, {params: {ip: ip}})
+            .then(function(response) {
+                $scope.getServers();
+                hideOverlay();
+            });
+        }
+    };
+
+    // Get SSH public key
+    $scope.getkey = function() {
+        $http.get(API_KEY)
         .then(function(response) {
             $scope.publickey = response.data;
         });
-    }
+    };
 
+    // Initial load
     $scope.getServers();
     $scope.getkey();
 });

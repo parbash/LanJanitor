@@ -2,3 +2,4 @@ flask
 ansible
 ansible_runner
 pycryptodome
+flask_wtf
