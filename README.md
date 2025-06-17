@@ -1,4 +1,4 @@
-# LanJanitor
+# LanJanitor v0.2
 When you can't seem to keep your homelab servers up to date, let LanJanitor help!
 
 ## Overview
@@ -16,19 +16,28 @@ The pieces that make LanJanitor work are:
 
 ## Features
 ### 0.1
-* CRUD servers from DB 
+* CRUD servers from DB
+* Check for updates
+* Install Updates
 
-### In development...
-* Detect how many updates are required
+### 0.2
+* Added login system (default: admin/admin) with session-based authentication
+* Password can be changed from the settings page
+* Detect if reboot is required using Ansible and update the DB
+* Change index.html to display the actual reboot status with icons
+* Add a button to reboot server with a confirmation popup
+* Ping each server when the server list is loaded and display the ping status in the Bootstrap card with a green check or red X icon
 
 ### ToDo...
-* Detect if reboot is required
-* Reboot server
-* Install updates
-* Support for Ubuntu 20.04 servers
+* (Your next features here)
 
 ## Installation
 ### Manual
+
+### Default Login
+
+* Username: `admin`
+* Password: `admin`
 
 1. Pull repo files
 

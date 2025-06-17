@@ -1,3 +1,15 @@
+    $scope.rebootServer = function(_ip, _name){
+        if (confirm("Reboot " + _name + "? This will restart the server.")) {
+            document.getElementById('overlay').style.display = 'block';
+            $http.post("api/reboot", {ip: _ip, name: _name})
+            .then(function(response){
+                setTimeout(function(){
+                    $scope.getServers();
+                    document.getElementById('overlay').style.display = 'none';
+                }, 10000); // Wait 10 seconds for reboot
+            });
+        }
+    }
 // Define the `lanJanitorApp` module
 var app = angular.module('lanJanitor', []);
 

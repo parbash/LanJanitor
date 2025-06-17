@@ -16,3 +16,10 @@
       shell: "/usr/lib/update-notifier/apt-check"
       register: output
     - debug: var=output.stderr
+    - name: "Check if reboot is required"
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_file
+    - name: "Show reboot required status"
+      debug:
+        var: reboot_file.stat.exists

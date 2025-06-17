@@ -74,7 +74,23 @@
                 <h5 class="card-title" style="font-family: Staatliches;">{a server.server_name a}<i class="bi bi-trash-fill float-end" ng-click="delServer(server.server_id,server.server_name)"></i></h5>
                 <h6 class="card-subtitle mb-2">{a server.server_ip a}</h6>
                 <p class="card-text" style="text-align:right;">
-                  <strong>Reboot required:</strong> {a server.server_reboot a}<br/>
+                  <strong>Reboot required:</strong>
+                  <span ng-if="server.server_reboot == 'true'">
+                    <i class="bi bi-power text-danger" title="Reboot required"></i>
+                  </span>
+                  <span ng-if="server.server_reboot != 'true'">
+                    <i class="bi bi-power text-success" title="No reboot required"></i>
+                  </span><br/>
+                  <strong>Status:</strong>
+                  <span ng-if="server.ping_status == 'online'">
+                    <i class="bi bi-check-circle-fill text-success" title="Online"></i>
+                  </span>
+                  <span ng-if="server.ping_status != 'online'">
+                    <i class="bi bi-x-circle-fill text-danger" title="Offline"></i>
+                  </span><br/>
+                  <button class="btn btn-warning btn-sm mt-2" ng-click="rebootServer(server.server_ip, server.server_name)">
+                    <i class="bi bi-arrow-repeat"></i> Reboot
+                  </button>
                   <strong>Updates available:</strong> {a server.server_updates a} <i class="bi bi-tools" ng-click="upgradeServer(server.server_ip,server.server_name)"></i>
                 </p>
               </div>
