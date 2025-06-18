@@ -5,7 +5,9 @@ from flask import Blueprint, request, jsonify, make_response, session, current_a
 from flask_wtf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
-from app import (DB_PATH, PUBLIC_KEY_PATH, SERVERS_TABLE, login_required, dict_factory, runPlaybook, aptUpdate, get_cached_ping)
+from common import (
+    DB_PATH, PUBLIC_KEY_PATH, SERVERS_TABLE, login_required, dict_factory, runPlaybook, aptUpdate, get_cached_ping
+)
 
 api = Blueprint('api', __name__)
 

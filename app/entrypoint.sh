@@ -1,3 +1,3 @@
 #!/bin/sh
-crond
+#crond
 python app.py

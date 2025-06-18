@@ -16,7 +16,7 @@ RUN apk update && \
         openssl \
         openssh-client \
         openrc \
-        busybox-initscripts && \
+        cronie && \
     apk add --no-cache --virtual .build-deps \
         build-base \
         linux-headers \
@@ -26,10 +26,10 @@ RUN apk update && \
     pip install -r requirements.txt && \
     apk del .build-deps
 
-COPY . /app
+COPY ./app /app
 
 RUN crontab /etc/cron.d/lanjanitor-cron
-RUN rc-update add crond
+#RUN rc-update add crond
 
 #ENTRYPOINT ["python"]
 CMD ["/bin/sh","entrypoint.sh"]

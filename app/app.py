@@ -13,7 +13,8 @@ import platform
 import time
 from flask_wtf import CSRFProtect
 from datetime import timedelta, datetime
-from app.api import api
+#from app.api import api
+from blueprint_api import api
 
 # --- Constants ---
 DB_PATH = '/app/lanjanitor.db'
@@ -35,6 +36,20 @@ app.secret_key = os.environ.get('SECRET_KEY', os.urandom(32))
 # CSRF protection for all POST/PUT/DELETE requests
 csrf = CSRFProtect(app)
 
+# Initialize user DB at startup
+def init_user_db():
+    """Initialize user database and default admin user."""
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute(f'''CREATE TABLE IF NOT EXISTS {USERS_TABLE} (username TEXT PRIMARY KEY, password_hash TEXT)''')
+        # Insert default admin if not exists
+        c.execute(f"SELECT * FROM {USERS_TABLE} WHERE username='admin'")
+        if not c.fetchone():
+            c.execute(f"INSERT INTO {USERS_TABLE} (username, password_hash) VALUES (?, ?)", ('admin', generate_password_hash('admin')))
+        conn.commit()
+
+init_user_db()
+
 # Register blueprints
 app.register_blueprint(api)
 
@@ -53,21 +68,6 @@ def session_timeout_check():
         session['last_active'] = now.isoformat()
 
 # --- USER AUTH SETUP ---
-def init_user_db():
-    """Initialize user database and default admin user."""
-    with sqlite3.connect(DB_PATH) as conn:
-        c = conn.cursor()
-        c.execute(f'''CREATE TABLE IF NOT EXISTS {USERS_TABLE} (username TEXT PRIMARY KEY, password_hash TEXT)''')
-        # Insert default admin if not exists
-        c.execute(f"SELECT * FROM {USERS_TABLE} WHERE username='admin'")
-        if not c.fetchone():
-            c.execute(f"INSERT INTO {USERS_TABLE} (username, password_hash) VALUES (?, ?)", ('admin', generate_password_hash('admin')))
-        conn.commit()
-
-@app.before_first_request
-def ensure_user_db():
-    init_user_db()
-
 def login_required(f):
     from functools import wraps
     @wraps(f)
