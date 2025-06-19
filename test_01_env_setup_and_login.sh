@@ -109,3 +109,4 @@ fi
 
 echo "\033[0;32mAll tests passed. Stopping container.\033[0m"
 docker stop $CONTAINER
+rm -f login.html
