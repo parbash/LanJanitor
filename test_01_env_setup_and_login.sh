@@ -59,12 +59,45 @@ SERVERS=$(curl -s -b cookies.txt http://localhost:$PORT/api/servers)
 echo "Servers response: $SERVERS"
 echo "$SERVERS" | grep '\[' >/dev/null || { echo "Failed to access /api/servers"; docker stop $CONTAINER; exit 1; }
 
-# 8. Test logout (send CSRF token)
+# 8. Test adding a server
+ADD_SERVER_PAYLOAD='{"name":"testserver","ip":"192.168.56.123"}'
+echo "Testing add server..."
+ADD_SERVER=$(curl -s -b cookies.txt -c cookies.txt -X POST -H "Content-Type: application/json" -H "X-CSRFToken: $CSRF" \
+  -d "$ADD_SERVER_PAYLOAD" \
+  http://localhost:$PORT/api/servers)
+echo "Add server response: $ADD_SERVER"
+echo "$ADD_SERVER" | grep '"status":' >/dev/null || { echo "Add server failed"; docker stop $CONTAINER; exit 1; }
+# Extract server_id from add response
+SERVER_ID=$(echo "$ADD_SERVER" | sed -n 's/.*"server_id": *\([0-9]*\).*/\1/p')
+echo "Extracted SERVER_ID from add response: $SERVER_ID"
+if [ -z "$SERVER_ID" ]; then
+  echo "Could not extract server_id from add server response"; docker stop $CONTAINER; exit 1
+fi
+
+# 9. Test that the new server appears in the list
+echo "Testing server appears in list..."
+SERVERS_AFTER_ADD=$(curl -s -b cookies.txt http://localhost:$PORT/api/servers)
+echo "Servers after add: $SERVERS_AFTER_ADD"
+echo "$SERVERS_AFTER_ADD" | grep 'testserver' >/dev/null || { echo "Added server not found in list"; docker stop $CONTAINER; exit 1; }
+
+# 10. Test deleting the server (use extracted server_id)
+echo "Testing delete server (id=$SERVER_ID)..."
+DEL_SERVER=$(curl -s -b cookies.txt -X DELETE -G -H "X-CSRFToken: $CSRF" --data-urlencode "id=$SERVER_ID" http://localhost:$PORT/api/servers)
+echo "Delete server response: $DEL_SERVER"
+echo "$DEL_SERVER" | grep '"status":' >/dev/null || { echo "Delete server failed"; docker stop $CONTAINER; exit 1; }
+
+# 11. Test that the server is gone
+echo "Testing server is deleted..."
+SERVERS_AFTER_DEL=$(curl -s -b cookies.txt http://localhost:$PORT/api/servers)
+echo "Servers after delete: $SERVERS_AFTER_DEL"
+echo "$SERVERS_AFTER_DEL" | grep 'testserver' && { echo "Server was not deleted"; docker stop $CONTAINER; exit 1; } || echo "Server deleted successfully."
+
+# 12. Test logout (send CSRF token)
 echo "Testing logout..."
 LOGOUT=$(curl -s -b cookies.txt -X POST -H "X-CSRFToken: $CSRF" http://localhost:$PORT/api/logout)
 echo "Logout response: $LOGOUT"
 
-# 9. Test session timeout (simulate by deleting cookies)
+# 13. Test session timeout (simulate by deleting cookies)
 echo "Testing session timeout (simulated by deleting cookies)..."
 rm cookies.txt
 TIMEOUT=$(curl -s -w "%{http_code}" -o /dev/null http://localhost:$PORT/api/servers)

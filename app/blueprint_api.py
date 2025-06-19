@@ -90,8 +90,9 @@ def servers():
             with sqlite3.connect(DB_PATH) as conn:
                 c = conn.cursor()
                 c.execute(f"INSERT INTO {SERVERS_TABLE} (server_name,server_ip, server_updates, server_reboot) VALUES (?,?,?,?)", (request.json['name'], request.json['ip'], 0, 'false'))
+                server_id = c.lastrowid
                 conn.commit()
-            return jsonify({'status': 'ok'})
+            return jsonify({'status': 'ok', 'server_id': server_id})
         elif request.method == 'DELETE':
             delitem = request.args.get('id')
             with sqlite3.connect(DB_PATH) as conn:
