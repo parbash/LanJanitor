@@ -11,6 +11,8 @@ const API_SERVERS = "api/servers";
 const API_REBOOT = "api/reboot";
 const API_UPDATES = "api/updates";
 const API_KEY = "api/key";
+const API_PASSWORD = "api/set_password";
+const API_LOGOUT = "api/logout";
 
 // Define the `lanJanitorController` controller on the `lanJanitorApp` module
 app.controller('lanJanitorController', function ($scope, $http) {
@@ -92,6 +94,43 @@ app.controller('lanJanitorController', function ($scope, $http) {
         $http.get(API_KEY)
         .then(function(response) {
             $scope.publickey = response.data;
+        });
+    };
+
+    // Change password
+    $scope.changePassword = function() {
+        $scope.passwordChangeSuccess = false;
+        $scope.passwordChangeError = "";
+        if ($scope.newPassword !== $scope.confirmPassword) {
+            $scope.passwordChangeError = "New passwords do not match.";
+            return;
+        }
+        $http.post(API_PASSWORD, {
+            old_password: $scope.currentPassword,
+            new_password: $scope.newPassword
+        }, csrfConfig())
+        .then(function(response) {
+            $scope.passwordChangeSuccess = true;
+            $scope.currentPassword = "";
+            $scope.newPassword = "";
+            $scope.confirmPassword = "";
+        }, function(error) {
+            if (error.status === 401) {
+                window.location.href = "/login";
+            } else {
+                $scope.passwordChangeError = error.data && (error.data.error || error.data.message) ? (error.data.error || error.data.message) : "Password change failed.";
+                console.log("Password change error:", error);
+            }
+        });
+    };
+
+    // Logout function
+    $scope.logout = function() {
+        $http.post(API_LOGOUT, {}, csrfConfig())
+        .then(function(response) {
+            window.location.href = "/login";
+        }, function() {
+            window.location.href = "/login";
         });
     };
 

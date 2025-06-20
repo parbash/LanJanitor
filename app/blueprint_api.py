@@ -83,6 +83,8 @@ def servers():
                 conn.row_factory = dict_factory
                 c = conn.cursor()
                 servers = c.execute(f"SELECT * FROM {SERVERS_TABLE}").fetchall()
+                if not servers:
+                    servers = []
                 for server in servers:
                     server['ping_status'] = 'online' if get_cached_ping(server['server_ip']) else 'offline'
             return jsonify(servers)

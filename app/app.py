@@ -3,7 +3,7 @@ import os
 import sys
 import sqlite3
 from io import StringIO
-from flask import Flask, render_template, jsonify, request, make_response, session
+from flask import Flask, render_template, jsonify, request, make_response, session, redirect
 from werkzeug.security import generate_password_hash, check_password_hash
 from Crypto.PublicKey import RSA
 import ansible_runner
@@ -73,7 +73,7 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not session.get('user'):
-            return make_response('Unauthorized', 401)
+            return redirect('/login')
         return f(*args, **kwargs)
     return decorated_function
 
