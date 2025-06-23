@@ -28,6 +28,10 @@ The pieces that make LanJanitor work are:
 * Add a button to reboot server with a confirmation popup
 * Ping each server when the server list is loaded and display the ping status in the Bootstrap card with a green check or red X icon
 
+### 0.3
+* Migrate from AngularJS to Vue.JS
+
+
 ### ToDo...
 * (Your next features here)
 
