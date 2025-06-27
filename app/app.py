@@ -48,7 +48,24 @@ def init_user_db():
             c.execute(f"INSERT INTO {USERS_TABLE} (username, password_hash) VALUES (?, ?)", ('admin', generate_password_hash('admin')))
         conn.commit()
 
-init_user_db()
+def init_db():
+    """Ensure all required tables exist at startup."""
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        # Users table
+        c.execute(f'''CREATE TABLE IF NOT EXISTS {USERS_TABLE} (username TEXT PRIMARY KEY, password_hash TEXT)''')
+        c.execute(f"SELECT * FROM {USERS_TABLE} WHERE username='admin'")
+        if not c.fetchone():
+            c.execute(f"INSERT INTO {USERS_TABLE} (username, password_hash) VALUES (?, ?)", ('admin', generate_password_hash('admin')))
+        # Servers table
+        c.execute(f'''CREATE TABLE IF NOT EXISTS {SERVERS_TABLE} (server_id integer primary key autoincrement, server_name text, server_ip text, server_updates integer, server_reboot text)''')
+        c.execute(f"SELECT * FROM {SERVERS_TABLE} WHERE server_ip = ?", (DEFAULT_SERVER_IP,))
+        if not c.fetchone():
+            c.execute(f"INSERT INTO {SERVERS_TABLE} (server_name,server_ip, server_updates, server_reboot) VALUES (?,?,?,?)", (DEFAULT_SERVER_NAME,DEFAULT_SERVER_IP,0,'false'))
+        conn.commit()
+
+# Call this at startup
+init_db()
 
 # Register blueprints
 app.register_blueprint(api)

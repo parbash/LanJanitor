@@ -116,3 +116,27 @@ def reboot_server():
     output = runPlaybook('reboot_server.yml', ip)
     app.logger.info(f"Reboot triggered for {name} ({ip}): {output.status}")
     return make_response("ok", 200)
+
+@api.route("/api/updates/all", methods=["POST"])
+@login_required
+def updates_all():
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = dict_factory
+            c = conn.cursor()
+            servers = c.execute(f"SELECT server_ip, server_name FROM {SERVERS_TABLE}").fetchall()
+        count = 0
+        errors = []
+        for server in servers:
+            try:
+                # Trigger update check (can be async in future)
+                aptUpdate(server['server_ip'])
+                count += 1
+            except Exception as ex:
+                errors.append(f"{server['server_name']} ({server['server_ip']}): {ex}")
+        msg = f"Update check triggered on {count} server{'s' if count != 1 else ''}."
+        if errors:
+            msg += f" Errors: {'; '.join(errors)}"
+        return jsonify({'status': 'ok', 'message': msg}), 200
+    except Exception as ex:
+        return jsonify({'status': 'error', 'message': f'Failed to check updates: {ex}'}), 500
