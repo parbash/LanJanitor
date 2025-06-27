@@ -6,15 +6,17 @@ defaultServerCard = {
     <div class="card server-card">
       <div class="card-body">
         <h5 class="card-title d-flex align-items-center gap-2" style="font-family: Staatliches;">
-          <i class="bi bi-bucket text-success"></i>
-          {{ server.server_name }}
+          <span v-if="server.os_type === 'Windows'"><i class='bi bi-windows text-primary'></i></span>
+          <span v-else-if="server.os_type === 'Ubuntu'"><i class='bi bi-ubuntu text-warning'></i></span>
+          <span v-else><i class='bi bi-laptop text-secondary'></i></span>
+          [[ server.server_name ]]
           <i class="bi bi-trash-fill ms-auto text-danger" style="cursor:pointer;" @click="$emit('delete', server.server_id, server.server_name)" title="Delete"></i>
         </h5>
-        <h6 class="card-subtitle mb-2 text-muted">{{ server.server_ip }}</h6>
+        <h6 class="card-subtitle mb-2 text-muted">[[ server.server_ip ]]</h6>
         <div class="mb-2">
-          <span class="badge bg-secondary me-2">ID: {{ server.server_id }}</span>
+          <span class="badge bg-secondary me-2">ID: [[ server.server_id ]]</span>
           <span v-if="server.server_updates == -1" class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>Error</span>
-          <span v-else class="badge bg-info text-dark">Updates: {{ server.server_updates }}</span>
+          <span v-else class="badge bg-info text-dark">Updates: [[ server.server_updates ]]</span>
         </div>
         <div v-if="server.server_updates == -1" class="alert alert-warning p-2 py-1 mb-2 d-flex align-items-center gap-2">
           <i class="bi bi-exclamation-triangle-fill text-danger"></i>

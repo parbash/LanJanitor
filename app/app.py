@@ -57,11 +57,16 @@ def init_db():
         c.execute(f"SELECT * FROM {USERS_TABLE} WHERE username='admin'")
         if not c.fetchone():
             c.execute(f"INSERT INTO {USERS_TABLE} (username, password_hash) VALUES (?, ?)", ('admin', generate_password_hash('admin')))
-        # Servers table
-        c.execute(f'''CREATE TABLE IF NOT EXISTS {SERVERS_TABLE} (server_id integer primary key autoincrement, server_name text, server_ip text, server_updates integer, server_reboot text)''')
+        # Servers table (add os_type column if not exists)
+        c.execute(f'''CREATE TABLE IF NOT EXISTS {SERVERS_TABLE} (server_id integer primary key autoincrement, server_name text, server_ip text, server_updates integer, server_reboot text, os_type text)''')
+        # Add os_type column if upgrading from old DB
+        try:
+            c.execute(f"ALTER TABLE {SERVERS_TABLE} ADD COLUMN os_type text")
+        except sqlite3.OperationalError:
+            pass  # Already exists
         c.execute(f"SELECT * FROM {SERVERS_TABLE} WHERE server_ip = ?", (DEFAULT_SERVER_IP,))
         if not c.fetchone():
-            c.execute(f"INSERT INTO {SERVERS_TABLE} (server_name,server_ip, server_updates, server_reboot) VALUES (?,?,?,?)", (DEFAULT_SERVER_NAME,DEFAULT_SERVER_IP,0,'false'))
+            c.execute(f"INSERT INTO {SERVERS_TABLE} (server_name,server_ip, server_updates, server_reboot, os_type) VALUES (?,?,?,?,?)", (DEFAULT_SERVER_NAME,DEFAULT_SERVER_IP,0,'false','Ubuntu'))
         conn.commit()
 
 # Call this at startup
@@ -141,11 +146,11 @@ def get_cached_ping(ip: str) -> bool:
 def setupdb():
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
-        c.execute(f'''CREATE TABLE IF NOT EXISTS {SERVERS_TABLE} (server_id integer primary key autoincrement, server_name text, server_ip text, server_updates integer, server_reboot text)''')
+        c.execute(f'''CREATE TABLE IF NOT EXISTS {SERVERS_TABLE} (server_id integer primary key autoincrement, server_name text, server_ip text, server_updates integer, server_reboot text, os_type text)''')
         # Only insert default server if it does not already exist
         c.execute(f"SELECT * FROM {SERVERS_TABLE} WHERE server_ip = ?", (DEFAULT_SERVER_IP,))
         if not c.fetchone():
-            c.execute(f"INSERT INTO {SERVERS_TABLE} (server_name,server_ip, server_updates, server_reboot) VALUES (?,?,?,?)", (DEFAULT_SERVER_NAME,DEFAULT_SERVER_IP,0,'false'))
+            c.execute(f"INSERT INTO {SERVERS_TABLE} (server_name,server_ip, server_updates, server_reboot, os_type) VALUES (?,?,?,?,?)", (DEFAULT_SERVER_NAME,DEFAULT_SERVER_IP,0,'false','Ubuntu'))
         conn.commit()
     return 'ok'
 

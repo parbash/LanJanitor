@@ -91,7 +91,8 @@ def servers():
         elif request.method == 'POST':
             with sqlite3.connect(DB_PATH) as conn:
                 c = conn.cursor()
-                c.execute(f"INSERT INTO {SERVERS_TABLE} (server_name,server_ip, server_updates, server_reboot) VALUES (?,?,?,?)", (request.json['name'], request.json['ip'], 0, 'false'))
+                os_type = request.json.get('os_type', 'Ubuntu')
+                c.execute(f"INSERT INTO {SERVERS_TABLE} (server_name,server_ip, server_updates, server_reboot, os_type) VALUES (?,?,?,?,?)", (request.json['name'], request.json['ip'], 0, 'false', os_type))
                 server_id = c.lastrowid
                 conn.commit()
             return jsonify({'status': 'ok', 'server_id': server_id})

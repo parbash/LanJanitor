@@ -16,10 +16,8 @@ defaultNavbarBar = {
             <li>
               <a class="nav-link" aria-current="page" href="settings">Settings</a>
             </li>
-            <li class="nav-item">
-              <button class="btn btn-link nav-link text-danger" @click="$emit('logout')" style="cursor:pointer;">Logout</button>
-            </li>
           </ul>
+          <button class="btn btn-link nav-link logout-btn" @click="$emit('logout')" style="color:#222; font-weight:bold; margin-left:auto;">Logout</button>
         </div>
       </div>
     </nav>

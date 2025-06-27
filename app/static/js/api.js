@@ -4,14 +4,14 @@ const api = {
     return fetch('/api/servers')
       .then(r => r.ok ? r.json() : Promise.reject(r));
   },
-  addServer(name, ip, csrf) {
+  addServer(name, ip, os_type, csrf) {
     return fetch('/api/servers', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRFToken': csrf
       },
-      body: JSON.stringify({ name, ip })
+      body: JSON.stringify({ name, ip, os_type })
     }).then(r => r.ok ? r.json() : Promise.reject(r));
   },
   delServer(id, csrf) {

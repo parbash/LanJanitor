@@ -15,12 +15,15 @@ if (document.getElementById('app')) {
   const csrf = getCSRFToken();
   console.log('Mounting Vue app to #app');
 
+  // Use custom delimiters to avoid Jinja conflict
+  const delimiters = window.LANJANITOR_VUE_DELIMITERS || ['[[', ']]'];
   const app = Vue.createApp({
     data() {
       return {
         servers: [],
         newServerName: '',
         newServerIP: '',
+        newServerOsType: 'Ubuntu',
         showOverlay: false,
         publickey: '',
         // For settings page
@@ -37,7 +40,8 @@ if (document.getElementById('app')) {
         checkingAllUpdates: false,
         toastMsg: '',
         toastType: 'info',
-        showToast: false
+        showToast: false,
+        darkMode: false
       };
     },
     mounted() {
@@ -54,6 +58,11 @@ if (document.getElementById('app')) {
         toastDiv.style.right = '1.5rem';
         toastDiv.style.zIndex = '2000';
         document.body.appendChild(toastDiv);
+      }
+      // Dark mode: check localStorage and set initial state
+      if (localStorage.getItem('lanjanitor-darkmode') === 'true') {
+        this.darkMode = true;
+        document.body.classList.add('dark-mode');
       }
     },
     components: {
@@ -75,9 +84,10 @@ if (document.getElementById('app')) {
       async addServer() {
         if (!this.newServerName || !this.newServerIP) return;
         try {
-          await api.addServer(this.newServerName, this.newServerIP, csrf);
+          await api.addServer(this.newServerName, this.newServerIP, this.newServerOsType, csrf);
           this.newServerName = '';
           this.newServerIP = '';
+          this.newServerOsType = 'Ubuntu';
           await this.fetchServers();
         } catch (err) {
           alert('Failed to add server.');
@@ -210,10 +220,20 @@ if (document.getElementById('app')) {
         } finally {
           this.checkingAllUpdates = false;
         }
+      },
+      toggleDarkMode() {
+        // Only update body class and localStorage, do not flip darkMode here
+        if (this.darkMode) {
+          document.body.classList.add('dark-mode');
+          localStorage.setItem('lanjanitor-darkmode', 'true');
+        } else {
+          document.body.classList.remove('dark-mode');
+          localStorage.setItem('lanjanitor-darkmode', 'false');
+        }
       }
     }
   });
-  // Remove custom delimiters so Vue uses default {{ ... }}
+  app.config.compilerOptions.delimiters = delimiters;
   app.mount('#app');
   console.log('Vue app mounted to #app');
 }
