@@ -58,17 +58,17 @@ logger.info('auth_api blueprint registered.')
 app.register_blueprint(servers_api)
 logger.info('servers_api blueprint registered.')
 
-def init_user_db():
-    """Initialize user database and default admin user."""
-    with sqlite3.connect(DB_PATH) as conn:
-        c = conn.cursor()
-        c.execute(f'''CREATE TABLE IF NOT EXISTS {USERS_TABLE} (username TEXT PRIMARY KEY, password_hash TEXT)''')
-        # Insert default admin if not exists
-        c.execute(f"SELECT * FROM {USERS_TABLE} WHERE username='admin'")
-        if not c.fetchone():
-            c.execute(f"INSERT INTO {USERS_TABLE} (username, password_hash) VALUES (?, ?)", ('admin', generate_password_hash('admin')))
-        conn.commit()
-    logger.info('User DB initialized and default admin ensured.')
+#def init_user_db():
+#    """Initialize user database and default admin user."""
+#    with sqlite3.connect(DB_PATH) as conn:
+#        c = conn.cursor()
+#        c.execute(f'''CREATE TABLE IF NOT EXISTS {USERS_TABLE} (username TEXT PRIMARY KEY, password_hash TEXT)''')
+#        # Insert default admin if not exists
+#        c.execute(f"SELECT * FROM {USERS_TABLE} WHERE username='admin'")
+#        if not c.fetchone():
+#            c.execute(f"INSERT INTO {USERS_TABLE} (username, password_hash) VALUES (?, ?)", ('admin', generate_password_hash('admin')))
+#        conn.commit()
+#    logger.info('User DB initialized and default admin ensured.')
 
 
 def init_db():
@@ -147,6 +147,8 @@ def hello():
 
 app.cli.add_command(hello)
 
+
 if __name__ == "__main__":
+    init_db()
     logger.info('Starting LanJanitor Flask app...')
     app.run(debug=True, host='0.0.0.0', port=5000)

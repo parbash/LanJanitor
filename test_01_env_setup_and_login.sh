@@ -31,11 +31,11 @@ else
 fi
 
 # 4. Run setupdb command to initialize the database
-echo "Running setupdb command..."
-docker exec $CONTAINER flask setupdb
-if [ $? -ne 0 ]; then
-  echo "Database setup failed"; docker stop $CONTAINER; exit 1
-fi
+#echo "Running setupdb command..."
+#docker exec $CONTAINER flask setupdb
+#if [ $? -ne 0 ]; then
+#  echo "Database setup failed"; docker stop $CONTAINER; exit 1
+#fi
 
 # 5. Fetch login page to get CSRF token and cookies
 echo "Fetching login page for CSRF token..."
