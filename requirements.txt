@@ -1,5 +1,16 @@
+############################################################
+# LanJanitor Python Requirements
+#
+# For production, pin versions for stability (e.g. flask==2.3.2)
+# For development, you may use latest versions.
+############################################################
+
 flask
-ansible
-ansible_runner
+flask-wtf
+werkzeug
+ansible-runner
 pycryptodome
-flask_wtf
+
+# Optional: Add testing and linting tools
+# pytest
+# flake8

@@ -12,6 +12,14 @@ LanJanitor automates server update management, reboot detection, and status moni
 - **Sqlite DB** – Persistent storage
 - **Ansible** – Server automation (updates, reboots)
 
+## Code Organization & Best Practices
+- **Modular Blueprints:** API routes are split into `auth_api.py`, `servers_api.py`, and `updates_api.py` for maintainability and scalability.
+- **Configuration:** Docker Compose uses relative paths and environment variables for secrets. See `docker-compose.yml` for details.
+- **Requirements:** All Python dependencies are listed in `requirements.txt` with comments for clarity.
+- **Ansible Playbooks:** Located in `app/ansible/`, organized by function and tags.
+- **Static & Templates:** Frontend assets in `static/`, HTML templates in `templates/`.
+- **Logging & Docs:** API endpoints include logging and docstrings for traceability and self-documentation.
+
 ## Current Features
 - Add, edit, and delete servers (CRUD)
 - Set server OS type (Windows, Ubuntu, Other Linux) with icons

@@ -1,4 +1,4 @@
-FROM python:3.11-alpine
+FROM python:3.12-alpine
 
 ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
 ENV FLASK_APP /app/app.py
