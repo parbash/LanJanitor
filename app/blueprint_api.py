@@ -67,7 +67,8 @@ def getkey():
 @login_required
 def aptUpgrade():
     try:
-        output = runPlaybook('update_install.yml', request.args.get("ip"))
+        # Use the new combined playbook with update_install tag
+        output = runPlaybook('lanjanitor.yml', request.args.get("ip"), tags='update_install')
         app.logger.info(output.status)
         aptUpdate(request.args.get("ip"))
         return jsonify({'status': 'ok'}), 200
@@ -114,7 +115,8 @@ def reboot_server():
     name = data.get("name")
     if not ip:
         return make_response("Missing IP", 400)
-    output = runPlaybook('reboot_server.yml', ip)
+    # Use the new combined playbook with reboot tag
+    output = runPlaybook('lanjanitor.yml', ip, tags='reboot')
     app.logger.info(f"Reboot triggered for {name} ({ip}): {output.status}")
     return make_response("ok", 200)
 
@@ -130,8 +132,8 @@ def updates_all():
         errors = []
         for server in servers:
             try:
-                # Trigger update check (can be async in future)
-                aptUpdate(server['server_ip'])
+                # Use the new combined playbook with update_check tag
+                runPlaybook('lanjanitor.yml', server['server_ip'], tags='update_check')
                 count += 1
             except Exception as ex:
                 errors.append(f"{server['server_name']} ({server['server_ip']}): {ex}")

@@ -1,0 +1,55 @@
+---
+- name: LanJanitor Server Maintenance
+  hosts: "{{ target }}"
+  remote_user: root
+  gather_facts: no
+  become: true
+  vars:
+    ansible_ssh_private_key_file: /app/private.pem
+    ansible_ssh_port: 22
+    ansible_python_interpreter: /usr/bin/python3
+
+  tasks:
+    - name: Apt Update (Check for updates)
+      apt:
+        update_cache: yes
+      ignore_errors: yes
+      tags: update_check
+
+    - name: Check how many updates are required
+      shell: "/usr/lib/update-notifier/apt-check"
+      register: output
+      changed_when: false
+      tags: update_check
+
+    - name: Show update count
+      debug:
+        var: output.stderr
+      changed_when: false
+      tags: update_check
+
+    - name: Check if reboot is required
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_file
+      changed_when: false
+      tags: update_check
+
+    - name: Show reboot required status
+      debug:
+        var: reboot_file.stat.exists
+      changed_when: false
+      tags: update_check
+
+    - name: Apt Upgrade (Install updates)
+      apt:
+        update_cache: yes
+        autoremove: yes
+        upgrade: dist
+      ignore_errors: yes
+      tags: update_install
+
+    - name: Reboot the server
+      reboot:
+        reboot_timeout: 600
+      tags: reboot
