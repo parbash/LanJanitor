@@ -65,12 +65,20 @@ def get_cached_ping(ip: str) -> bool:
     _ping_cache[ip] = {'status': status, 'timestamp': now}
     return status
 
-def runPlaybook(_playbook, _ip):
+def runPlaybook(_playbook, _ip, tags=None):
     old_stdout = sys.stdout
     result = StringIO()
     sys.stdout = result
     _inventory = f'"{_ip}"'
-    r = ansible_runner.run(private_data_dir='/app/ansible', playbook=_playbook, inventory=_inventory, extravars={ 'target' :_ip})
+    runner_args = {
+        'private_data_dir': '/app/ansible',
+        'playbook': _playbook,
+        'inventory': _inventory,
+        'extravars': { 'target': _ip }
+    }
+    if tags:
+        runner_args['tags'] = tags
+    r = ansible_runner.run(**runner_args)
     sys.stdout = old_stdout
     r.status = result.getvalue()
     return r
