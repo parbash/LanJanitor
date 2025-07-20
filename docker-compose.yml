@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   lanjanitor:
     image: lanjanitor:latest
@@ -6,7 +5,7 @@ services:
     build: .
     # Mount local app directory into container for live code updates (dev only)
     volumes:
-      - ./app:/app
+      - ./lanjanitor:/lanjanitor
     ports:
       - "80:5000"
     restart: unless-stopped
@@ -14,4 +13,4 @@ services:
       # Set a strong secret key in production!
       - SECRET_KEY=changeme
     # Uncomment below for persistent DB storage outside container
-    #    - ./data/lanjanitor.db:/app/lanjanitor.db
+    #    - ./data/lanjanitor.db:/lanjanitor/lanjanitor.db

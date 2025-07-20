@@ -1,7 +1,13 @@
+"""
+LanJanitor Auth API
+-------------------
+Authentication, password management, and public key endpoints.
+"""
 from flask import Blueprint, request, jsonify, session, current_app as app
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
-from common import DB_PATH, PUBLIC_KEY_PATH, login_required
+from config import DB_PATH, PUBLIC_KEY_PATH
+from utils.decorators import login_required
 
 auth_api = Blueprint('auth_api', __name__)
 

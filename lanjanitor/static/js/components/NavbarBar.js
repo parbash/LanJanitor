@@ -1,4 +1,8 @@
-// NavbarBar Vue component
+/**
+ * LanJanitor NavbarBar.js
+ * -----------------------
+ * Vue component for navigation bar and logout.
+ */
 defaultNavbarBar = {
   emits: ['logout'],
   template: `

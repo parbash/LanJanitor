@@ -1,4 +1,13 @@
-// API functions for LanJanitor
+/**
+ * LanJanitor api.js
+ * -----------------
+ * API functions for backend communication.
+ */
+
+/**
+ * API object for server and user actions.
+ * @namespace api
+ */
 const api = {
   getServers() {
     return fetch('/api/servers')

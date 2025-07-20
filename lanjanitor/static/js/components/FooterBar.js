@@ -1,4 +1,8 @@
-// FooterBar Vue component
+/**
+ * LanJanitor FooterBar.js
+ * -----------------------
+ * Vue component for page footer.
+ */
 defaultFooterBar = {
   template: `
     <div class="row">

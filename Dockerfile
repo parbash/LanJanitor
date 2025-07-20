@@ -1,12 +1,12 @@
 FROM python:3.12-alpine
 
 ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
-ENV FLASK_APP /app/app.py
+ENV FLASK_APP=/lanjanitor/lanjanitor.py
 
-COPY requirements.txt /app/requirements.txt
+COPY requirements.txt /lanjanitor/requirements.txt
 COPY lanjanitor-cron /etc/cron.d/lanjanitor-cron
 
-WORKDIR /app
+WORKDIR /lanjanitor
 
 RUN chmod 0644 /etc/cron.d/lanjanitor-cron
 
@@ -26,7 +26,7 @@ RUN apk update && \
     pip install -r requirements.txt && \
     apk del .build-deps
 
-COPY ./app /app
+COPY ./lanjanitor /lanjanitor
 
 RUN crontab /etc/cron.d/lanjanitor-cron
 #RUN rc-update add crond

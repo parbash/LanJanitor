@@ -1,4 +1,8 @@
-// LoadingOverlay Vue component
+/**
+ * LanJanitor LoadingOverlay.js
+ * ----------------------------
+ * Vue component for showing loading overlay during updates.
+ */
 defaultLoadingOverlay = {
   props: ['show'],
   template: `

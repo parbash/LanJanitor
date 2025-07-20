@@ -1,6 +1,14 @@
+
+"""
+LanJanitor Servers API
+----------------------
+Server CRUD, status, and reboot endpoints.
+"""
 from flask import Blueprint, request, jsonify, session, current_app as app
 import sqlite3
-from common import DB_PATH, SERVERS_TABLE, login_required, dict_factory, runPlaybook, get_cached_ping
+from config import DB_PATH, SERVERS_TABLE
+from utils.decorators import login_required
+from utils.common import dict_factory, runPlaybook, get_cached_ping
 
 servers_api = Blueprint('servers_api', __name__)
 

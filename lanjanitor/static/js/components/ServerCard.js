@@ -1,4 +1,8 @@
-// ServerCard Vue component
+/**
+ * LanJanitor ServerCard.js
+ * -----------------------
+ * Vue component for displaying server info and actions.
+ */
 defaultServerCard = {
   props: ['server'],
   emits: ['delete', 'reboot', 'upgrade'],

@@ -1,6 +1,15 @@
+
+"""
+LanJanitor Updates API
+----------------------
+Endpoints for server update checks and installations.
+"""
 from flask import Blueprint, request, jsonify, current_app as app
 import sqlite3
-from common import DB_PATH, SERVERS_TABLE, login_required, dict_factory, runPlaybook, aptUpdate
+from config import DB_PATH, SERVERS_TABLE
+from utils.decorators import login_required
+from utils.common import dict_factory, runPlaybook
+from utils.cli import aptUpdate
 
 updates_api = Blueprint('updates_api', __name__)
 

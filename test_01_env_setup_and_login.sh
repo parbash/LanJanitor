@@ -4,13 +4,17 @@
 
 set -e
 
-IMAGE=lanjanitor:0.2
+IMAGE=lanjanitor:latest
 CONTAINER=lanjanitor-test
 PORT=8080
 
-# 1. Build Docker image
-echo "Building Docker image..."
-docker build -t $IMAGE .
+# 1. Build Docker image if it doesn't exist
+if ! docker image inspect $IMAGE >/dev/null 2>&1; then
+  echo "Docker image not found. Building Docker image..."
+  docker build -t $IMAGE .
+else
+  echo "Docker image $IMAGE already exists. Skipping build."
+fi
 
 # 2. Run container
 echo "Starting container..."

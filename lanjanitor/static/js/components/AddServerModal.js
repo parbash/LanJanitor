@@ -1,4 +1,8 @@
-// AddServerModal Vue component
+/**
+ * LanJanitor AddServerModal.js
+ * ----------------------------
+ * Vue component for adding a new server.
+ */
 defaultAddServerModal = {
   props: ['name', 'ip', 'os_type'],
   emits: ['update:name', 'update:ip', 'update:os_type', 'add'],

@@ -1,5 +1,9 @@
-// Main entry for LanJanitor Vue app
-// Assumes api.js, utils.js, and all components are loaded before this file
+/**
+ * LanJanitor main.js
+ * ------------------
+ * Main entry for LanJanitor Vue app.
+ * Assumes api.js, utils.js, and all components are loaded before this file.
+ */
 
 console.log('LanJanitor main.js loaded');
 
@@ -17,6 +21,11 @@ if (document.getElementById('app')) {
 
   // Use custom delimiters to avoid Jinja conflict
   const delimiters = window.LANJANITOR_VUE_DELIMITERS || ['[[', ']]'];
+
+  /**
+   * Main Vue app instance
+   * Handles server CRUD, login, password change, and UI state.
+   */
   const app = Vue.createApp({
     data() {
       return {
